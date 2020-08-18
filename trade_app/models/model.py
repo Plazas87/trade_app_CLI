@@ -10,6 +10,7 @@ class DatabaseController:
     # Singleton implementation
     """Clase que controla la conexión a la base de datos. Esta clase ira creciendo hasta que sea completamente funcional
         y pueda ejecutar todos los comandos SQL"""
+
     def __init__(self, db):
         params = self._config()
         self.user = params[db][ConfigEnum.user.name]
@@ -287,6 +288,29 @@ class DatabaseController:
                 self.close_connection(conn)
             return data_query
 
+    def open_trade(self, trade_dict):
+        conn = self.connect()
+        if conn is not None:
+            try:
+                query = "INSERT INTO openorders VALUES" \
+                        " (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+
+                cursor = conn.cursor()
+                data = tuple(trade_dict.values())
+                cursor.execute(query, data)
+
+            except Exception as e:
+                # logging.error(
+                #     'Error: PostgreSQL connection has been closed but an Exception has been raised - {0}'.format(e))
+                print(e)
+                cursor.close()
+                self.close_connection(conn)
+                return False
+            else:
+                conn.commit()
+                cursor.close()
+                self.close_connection(conn)
+            return True
 
 
 if __name__ == '__main__':

@@ -1,6 +1,6 @@
 from .portfolio import Portafolio
 from .trader import Trader
-from .orders import OrderComponents
+from .orders import OrderComponents, OrderTypes
 from .models import DatabaseController
 from random import randint
 from configparser import ConfigParser
@@ -14,7 +14,7 @@ class Controller:
         # initializes capital for session
         if self.validate_initial_capital():
             self.portfolio = Portafolio(config_obj.initial_capital)
-            self.set_initial_capital(config_obj.initial_capital)
+            self.set_capital(config_obj.initial_capital)
 
         else:
             self.portfolio = Portafolio(self.get_capital())
@@ -27,7 +27,6 @@ class Controller:
 
     def run(self):
         self.status = True
-        self.set_initial_capital()
 
     def check_user(self, user, pwrd):
         user_query = self._dbController.selectQuery('users', '*', filter_table=user)
@@ -48,17 +47,19 @@ class Controller:
 
     def open_position(self, buy_order):
         try:
-            status, order_dict = self.trader.prepare_trade(buy_order)
+            status, order_dict = self.trader.prepare_order(buy_order)
             if status:
                 if self.validate_buying_power(order_dict):
                     print(f'Capital before execute the order: {self.portfolio.capital}')
                     if self.trader.execute_order(order_dict):
-                        self._dbController.save_order(order_dict)
-                        self.portfolio.decrease_capital(order_dict[OrderComponents.cost.name])
-                        print('Trade successfully executed.')
-                        print(f'Capital before execute the order: {self.portfolio.capital}')
-                        # for key, value in order_dict.items():
-                        #     print(f'{key}: {value}')
+                        self.update_capital(order_dict)
+                        if self._dbController.save_order(order_dict):
+                            trade_dict = self.trader.prepare_trade(order_dict)
+                            self._dbController.open_trade(trade_dict)
+                            print('Trade successfully executed.')
+                            print(f'Capital after execute the order: {self.portfolio.capital}')
+                            # for key, value in order_dict.items():
+                            #     print(f'{key}: {value}')
 
             else:
                 print(f'The trade is not valid - STATUS: {status}')
@@ -68,13 +69,13 @@ class Controller:
 
     def close_position(self, sell_order):
         try:
-            status, order_dict = self.trader.prepare_trade(sell_order)
+            status, order_dict = self.trader.prepare_order(sell_order)
             if status:
                 if self.validate_order_id(order_dict):
                     print(f'Capital before execute the order: {self.portfolio.capital}')
                     if self.trader.execute_order(order_dict):
                         self._dbController.save_order(order_dict)
-                        self.portfolio.increase_capital(order_dict[OrderComponents.cost.name])
+                        self.update_capital(order_dict)
                         print('Trade successfully executed.')
                         print(f'Capital after execute the order: {self.portfolio.capital}')
                         # for key, value in order_dict.items():
@@ -177,7 +178,6 @@ class Controller:
     def validate_order_id(self, order_dict):
         return True
 
-    # TODO: set initial capital in database
     def validate_initial_capital(self):
         is_initial = self._dbController.validate_inital_capital()
 
@@ -186,9 +186,18 @@ class Controller:
         else:
             return True
 
-    def set_initial_capital(self, capital):
-        self._dbController.save_capital(capital)
-        return True
+    # TODO: update capiital in both database an portfolio capital property
+    def update_capital(self, order):
+        if order[OrderComponents.order_type.name] == OrderTypes.buy.name:
+            self.portfolio.decrease_capital(order[OrderComponents.cost.name])
+            self.set_capital(self.portfolio.capital)
+
+        elif order[OrderComponents.order_type.name] == OrderTypes.sell.name:
+            self.portfolio.increase_capital(order[OrderComponents.cost.name])
+            self.set_capital(self.portfolio.capital)
+
+    def set_capital(self, capital):
+        return self._dbController.save_capital(capital)
 
     def get_capital(self):
         capital = self._dbController.get_capital()

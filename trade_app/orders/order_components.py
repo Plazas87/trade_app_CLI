@@ -18,11 +18,13 @@ class OrderComponents(Enum):
     trader_id = 13
 
 
+class OpenOrdersComponents(Enum):
+    trade_id = 0
+    profit = 1
+    result = 2
+
 
 class OrderTypes(Enum):
-    buy = 1
-    sell = 2
-
-
-if __name__ == '__main__':
-    pass
+    buy = 0
+    sell = 1
+    trade = 2

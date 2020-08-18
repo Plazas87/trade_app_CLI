@@ -13,7 +13,7 @@ class Trader:
         self.max_lost_per_day = max_lost_per_day
         self.max_buy_per_trade = max_buy_per_trade
 
-    def prepare_trade(self, order):
+    def prepare_order(self, order):
         try:
             order = self.order_to_dict(order)
             order['trader_id'] = self.id_trader
@@ -32,18 +32,13 @@ class Trader:
             print(e, "Can't create the order: ", e.args)
             return False, 0
 
-            # if self.portafolio.open_position(order):
-            #     if self.trader.executeOrder(order):
-            #         self.dbController.insert(order)
-            #         # self.portafolio.print_portafolio(stocks)
-            #         var = self.portafolio.actualizar_capital(order)
-            #         if var is not None:
-            #             self.dbController.update_capital(order[OpenOrderElement.time_stamp.name], var)
-            #             print()
-            #             print('    Capital disponible (USD) : {}'.format(var))
-            #             print()
-            # else:
-            #     pass
+    def prepare_trade(self, order_dict):
+        order_dict['order_type'] = OrderTypes.trade.name
+        order_dict['trade_id'] = self._generates_id()
+        order_dict['profit'] = 0
+        order_dict['result'] = 0
+
+        return order_dict
 
     def execute_order(self, order_dict):
         if order_dict[OrderComponents.order_type.name] == OrderTypes.buy.name:
@@ -68,20 +63,14 @@ class Trader:
                 print(e, '- Error in trader.py: {} method executeOrder'.format(e.__traceback__.tb_lineno))
                 return False
 
-    #
-    #     elif order[CloseOrderElement.order_type.name] == OrderTypes.Venta.name:
-    #         try:
-    #             print('    La orden de venta número {0} de {1} ha sido enviada a TOS'.format(order[CloseOrderElement.id.name],
-    #                                                                                          order[CloseOrderElement.ticker.name]))
-    #             # enviar llamada a la plataforma de TOS
-    #             return True
-    #         except Exception as e:
-    #             print(e, '- Error in trader.py: {} method executeOrder'.format(e.__traceback__.tb_lineno))
-    #             return False
-    #
-    #     else:
-    #         print('No se ha podido enviar la orden a TOS')
-    #         return False
+    def _generates_id(self):
+        return str(datetime.now().year) + \
+               str(datetime.now().month) + \
+               str(datetime.now().day) + \
+               str(datetime.now().hour) + \
+               str(datetime.now().minute) + \
+               str(datetime.now().second) + \
+               str(randint(1, 1000))
 
     @staticmethod
     def generate_id():
@@ -124,4 +113,4 @@ if __name__ == '__main__':
     buy_order = BuyOrder('NFLX', buy_price=10, quantity=3)
     portfolio = Portafolio(1000)
     trader = Trader(0.005, 0.03, 0.03, portfolio.capital)
-    trader.prepare_trade(buy_order)
+    trader.prepare_order(buy_order)
