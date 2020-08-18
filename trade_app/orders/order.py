@@ -3,7 +3,7 @@ from random import randint
 
 
 class Order:
-    def __init__(self, ticker, buy_price, sell_price, quantity):
+    def __init__(self, ticker, buy_price, sell_price, quantity, order_id=None):
         self._timestamp = str(datetime.now())
         self._year = datetime.now().year
         self._month = datetime.now().month
@@ -13,7 +13,7 @@ class Order:
         self._buy_price = buy_price/1 if buy_price > 0 else 0.0
         self._sell_price = sell_price/1 if sell_price > 0 else 0.0
         self._quantity = quantity if quantity > 0 else 0
-        self._id = self._generates_id()
+        self._id = order_id if order_id is not None else self._generates_id()
         self._ticker = ticker
 
     @property

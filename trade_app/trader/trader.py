@@ -13,11 +13,17 @@ class Trader:
         self.max_lost_per_day = max_lost_per_day
         self.max_buy_per_trade = max_buy_per_trade
 
-    def prepare_trade(self, buy_order):
+    def prepare_trade(self, order):
         try:
-            order = self.order_to_dict(buy_order)
+            order = self.order_to_dict(order)
             order['trader_id'] = self.id_trader
-            cost = order[OrderComponents.buy_price.name] * order[OrderComponents.quantity.name]
+
+            if order[OrderComponents.order_type.name] == OrderTypes.buy.name:
+                cost = order[OrderComponents.buy_price.name] * order[OrderComponents.quantity.name]
+
+            else:
+                cost = order[OrderComponents.sell_price.name] * order[OrderComponents.quantity.name]
+
             order['cost'] = cost
 
             return True, order
@@ -52,7 +58,7 @@ class Trader:
                 print(e, '- Error in trader.py: {} method executeOrder'.format(e.__traceback__.tb_lineno))
                 return False
 
-        elif order_dict[OrderComponents.order_type.name] == OrderComponents.sell.name:
+        elif order_dict[OrderComponents.order_type.name] == OrderTypes.sell.name:
             try:
                 print('    La orden de venta número {0} de {1} ha sido enviada a TOS'.format(order_dict[OrderComponents.id.name],
                                                                                              order_dict[OrderComponents.ticker.name]))

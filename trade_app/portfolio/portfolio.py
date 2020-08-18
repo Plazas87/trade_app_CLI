@@ -9,7 +9,7 @@ class Portafolio:
     # dtQuery = DatabaseController()
 
     def __init__(self, initial_value):
-        self._capital = initial_value if initial_value >= 0 else 0
+        self._capital = int(initial_value) if int(initial_value) >= 0 else 0
 
     @property
     def portafolio(self):
@@ -95,7 +95,7 @@ class Portafolio:
     #                 print(order_)
     #     except Exception as e:
     #         print(e, '- Error in portafolio.py: {} method print_pottafolio'.format(e.__traceback__.tb_lineno))
-    #         print('La orden que está buscando no se encuentra abierta, por favor revise el id de la orden')
+    #         print('La orden que está buscando no se encuentra abierta, por favor revise el id de la orden'
 
 
 if __name__ == '__main__':

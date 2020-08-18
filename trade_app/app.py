@@ -1,25 +1,36 @@
-import os
-print(os.getcwd())
 from .portfolio import Portafolio
 from .trader import Trader
 from .orders import OrderComponents
+from .models import DatabaseController
 from random import randint
 from configparser import ConfigParser
 
 
 class Controller:
-    def __init__(self, capital, max_lost_per_trade, max_lost_per_day, max_buy_per_trade):
-        self.portfolio = Portafolio(capital)
+    def __init__(self, config_obj, max_lost_per_trade, max_lost_per_day, max_buy_per_trade):
+        # Initializes database controller for session
+        self._dbController = DatabaseController('postgresql')
+
+        # initializes capital for session
+        if self.validate_initial_capital():
+            self.portfolio = Portafolio(config_obj.initial_capital)
+            self.set_initial_capital(config_obj.initial_capital)
+
+        else:
+            self.portfolio = Portafolio(self.get_capital())
+
+        # Initializes trader for session
         self.trader = Trader(max_lost_per_trade, max_lost_per_day, max_buy_per_trade)
-        # self.dbController = DatabaseController()
+
         self.status = False
         print('Your trader ID para esta sesión is:', self.trader.id_trader)
 
     def run(self):
         self.status = True
+        self.set_initial_capital()
 
     def check_user(self, user, pwrd):
-        user_query = self.dbController.selectQuery('users', '*', filter_table=user)
+        user_query = self._dbController.selectQuery('users', '*', filter_table=user)
         return self._validate_user(user, pwrd, user_query)
 
     def _validate_user(self, user, pwrd, user_query):
@@ -35,16 +46,39 @@ class Controller:
         else:
             return False
 
-    def open_long_position(self, buy_order):
+    def open_position(self, buy_order):
         try:
             status, order_dict = self.trader.prepare_trade(buy_order)
             if status:
                 if self.validate_buying_power(order_dict):
+                    print(f'Capital before execute the order: {self.portfolio.capital}')
                     if self.trader.execute_order(order_dict):
-                        print(f'Capital before execute the order: {self.portfolio.capital}')
+                        self._dbController.save_order(order_dict)
                         self.portfolio.decrease_capital(order_dict[OrderComponents.cost.name])
                         print('Trade successfully executed.')
                         print(f'Capital before execute the order: {self.portfolio.capital}')
+                        # for key, value in order_dict.items():
+                        #     print(f'{key}: {value}')
+
+            else:
+                print(f'The trade is not valid - STATUS: {status}')
+
+        except Exception as e:
+            pass
+
+    def close_position(self, sell_order):
+        try:
+            status, order_dict = self.trader.prepare_trade(sell_order)
+            if status:
+                if self.validate_order_id(order_dict):
+                    print(f'Capital before execute the order: {self.portfolio.capital}')
+                    if self.trader.execute_order(order_dict):
+                        self._dbController.save_order(order_dict)
+                        self.portfolio.increase_capital(order_dict[OrderComponents.cost.name])
+                        print('Trade successfully executed.')
+                        print(f'Capital after execute the order: {self.portfolio.capital}')
+                        # for key, value in order_dict.items():
+                        #     print(f'{key}: {value}')
 
             else:
                 print(f'The trade is not valid - STATUS: {status}')
@@ -139,14 +173,35 @@ class Controller:
     #     except Exception as e:
     #         print(e, '- Error in main.py: {} method load_open_orders'.format(e.__traceback__.tb_lineno))
 
+    # TODO: check if there is an open trade with a given ID
+    def validate_order_id(self, order_dict):
+        return True
+
+    # TODO: set initial capital in database
+    def validate_initial_capital(self):
+        is_initial = self._dbController.validate_inital_capital()
+
+        if is_initial:
+            return False
+        else:
+            return True
+
+    def set_initial_capital(self, capital):
+        self._dbController.save_capital(capital)
+        return True
+
+    def get_capital(self):
+        capital = self._dbController.get_capital()
+        return capital
+
 
 if __name__ == '__main__':
     from .orders import BuyOrder
+
     controller = Controller(1000, 0.005, 0.03, 0.3)
     controller.run()
     print(controller.portfolio.capital)
     print(controller.trader.max_buy_per_trade)
     buy_order = BuyOrder('NFLX', buy_price=10, quantity=10)
-    controller.open_long_position(buy_order)
+    controller.open_position(buy_order)
     print(controller.portfolio.capital)
-
