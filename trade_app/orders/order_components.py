@@ -18,10 +18,22 @@ class OrderComponents(Enum):
     trader_id = 13
 
 
-class OpenOrdersComponents(Enum):
+class TradeComponents(Enum):
     trade_id = 0
     profit = 1
     result = 2
+    status = 3
+
+
+class TradeResults(Enum):
+    positive = 'P'
+    negative = 'N'
+    waiting = 'W'
+
+
+class TradeStatus(Enum):
+    working = True
+    closed = False
 
 
 class OrderTypes(Enum):

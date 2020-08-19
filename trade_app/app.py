@@ -47,45 +47,67 @@ class Controller:
 
     def open_position(self, buy_order):
         try:
-            status, order_dict = self.trader.prepare_order(buy_order)
-            if status:
+            order_status, order_dict = self.trader.prepare_order(buy_order)
+            trade_status, trade_dict = self.trader.prepare_trade(buy_order)
+            if order_status and trade_status:
                 if self.validate_buying_power(order_dict):
-                    print(f'Capital before execute the order: {self.portfolio.capital}')
+                    print(f'    Capital before execute the order (USD): {self.portfolio.capital}')
+
                     if self.trader.execute_order(order_dict):
                         self.update_capital(order_dict)
+
                         if self._dbController.save_order(order_dict):
-                            trade_dict = self.trader.prepare_trade(order_dict)
                             self._dbController.open_trade(trade_dict)
-                            print('Trade successfully executed.')
-                            print(f'Capital after execute the order: {self.portfolio.capital}')
-                            # for key, value in order_dict.items():
-                            #     print(f'{key}: {value}')
 
+                            print(f'    Available capital for trade (USD): {self.portfolio.capital}')
+
+                            return True, order_dict
+
+                else:
+                    print('Not enough capital to trade')
+                    return False, []
             else:
-                print(f'The trade is not valid - STATUS: {status}')
+                print(f'The trade is not valid - STATUS: {order_status == trade_status}')
+                return False, []
 
         except Exception as e:
-            pass
+            print(e)
+            return False, []
 
-    def close_position(self, sell_order):
-        try:
-            status, order_dict = self.trader.prepare_order(sell_order)
-            if status:
-                if self.validate_order_id(order_dict):
-                    print(f'Capital before execute the order: {self.portfolio.capital}')
+    def close_position(self, sell_order, trade_id):
+        open_trades, trade_list = self.get_open_trades()
+
+        if open_trades:
+            try:
+                order_ready, order_dict = self.trader.prepare_order(sell_order)
+                if order_ready:
+                    # open_trades, trade_list = self.get_open_trades(order_dict)
+                    # if open_trades:
+                    #     for index, trade in enumerate(trade_list):
+                    #         print(f'{index}. {trade}')
+
+                    print(f'Capital before execute the close order: {self.portfolio.capital}')
                     if self.trader.execute_order(order_dict):
+                        # TODO: revisar como actualizar el capital y como actualizar el trade en la tabla opentrades
                         self._dbController.save_order(order_dict)
+                        self.trader.update_trade_to_close()
                         self.update_capital(order_dict)
+                        self._dbController.update_trade_by_id(order_dict, trade_id)
+
                         print('Trade successfully executed.')
-                        print(f'Capital after execute the order: {self.portfolio.capital}')
-                        # for key, value in order_dict.items():
-                        #     print(f'{key}: {value}')
+                        print(f'Capital after execute the close order: {self.portfolio.capital}')
 
-            else:
-                print(f'The trade is not valid - STATUS: {status}')
+                        return True, order_dict
+                else:
+                    print(f'The trade is not valid - STATUS: {order_ready}')
+                    return False, []
 
-        except Exception as e:
-            pass
+            except Exception as e:
+                return False, []
+
+        else:
+            print('There is no open trades to close')
+            return False, []
 
     def validate_buying_power(self, order):
         cost = order[OrderComponents.buy_price.name] * order[OrderComponents.quantity.name]
@@ -175,8 +197,13 @@ class Controller:
     #         print(e, '- Error in main.py: {} method load_open_orders'.format(e.__traceback__.tb_lineno))
 
     # TODO: check if there is an open trade with a given ID
-    def validate_order_id(self, order_dict):
-        return True
+    def get_open_trades(self):
+        trade_list = self._dbController.get_trades()
+        if len(trade_list) == 0:
+            return False, trade_list
+
+        else:
+            return True, trade_list
 
     def validate_initial_capital(self):
         is_initial = self._dbController.validate_inital_capital()
@@ -186,7 +213,6 @@ class Controller:
         else:
             return True
 
-    # TODO: update capiital in both database an portfolio capital property
     def update_capital(self, order):
         if order[OrderComponents.order_type.name] == OrderTypes.buy.name:
             self.portfolio.decrease_capital(order[OrderComponents.cost.name])
@@ -202,6 +228,13 @@ class Controller:
     def get_capital(self):
         capital = self._dbController.get_capital()
         return capital
+
+    def get_active_trades(self):
+        self.get_open_trades()
+
+    def get_open_trades_id(self, id):
+        trade = self._dbController.get_trade_by_id(id)
+        return trade
 
 
 if __name__ == '__main__':

@@ -5,11 +5,7 @@ from .order_components import OrderTypes
 class SellOrder(Order):
     def __init__(self, ticker, sell_price, buy_price=0, quantity=0):
         Order.__init__(self, ticker, buy_price, sell_price, quantity)
-        self._order_type = OrderTypes.sell.name
-
-    @property
-    def order_type(self):
-        return self._order_type
+        self.order_type = OrderTypes.sell.name
 
 
 if __name__ == '__main__':

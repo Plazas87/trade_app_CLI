@@ -293,7 +293,7 @@ class DatabaseController:
         if conn is not None:
             try:
                 query = "INSERT INTO openorders VALUES" \
-                        " (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                        " (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 
                 cursor = conn.cursor()
                 data = tuple(trade_dict.values())
@@ -311,6 +311,65 @@ class DatabaseController:
                 cursor.close()
                 self.close_connection(conn)
             return True
+
+    def get_trades(self):
+        conn = self.connect()
+        if conn is not None:
+            try:
+                query = "SELECT trade_id, status, result, order_id, time_stamp, " \
+                        "ticker, buy_price, quantity, order_type, cost " \
+                        "FROM openorders ORDER BY time_stamp DESC"
+                cursor = conn.cursor()
+                cursor.execute(query)
+                data_query = cursor.fetchall()
+
+            except Exception as e:
+                # logging.error(
+                #     'Error: PostgreSQL connection has been closed but an Exception has been raised - {0}'.format(e))
+                print(e)
+                cursor.close()
+                self.close_connection(conn)
+
+            else:
+                cursor.close()
+                self.close_connection(conn)
+            return data_query
+
+    def get_trade_by_id(self, id):
+        conn = self.connect()
+        if conn is not None:
+            try:
+                query = "SELECT ticker, quantity FROM openorders WHERE trade_id = (%s)"
+                data = (id,)
+                cursor = conn.cursor()
+                cursor.execute(query, data)
+                data_query = cursor.fetchall()[0]
+
+            except Exception as e:
+                # logging.error(
+                #     'Error: PostgreSQL connection has been closed but an Exception has been raised - {0}'.format(e))
+                print(e)
+                cursor.close()
+                self.close_connection(conn)
+
+            else:
+                cursor.close()
+                self.close_connection(conn)
+            return data_query
+
+    def update_trade_by_id(self, order, trade_id):
+        conn = self.connect()
+        if conn is not None:
+            try:
+                query = "UPDATE openorders SET sell_price = 1100 where capital_id = 42;"
+                data = ()
+                cursor = conn.cursor()
+                cursor.execute(query, data)
+                data_query = cursor.fetchall()
+
+            except Exception as e:
+                print(e)
+                print('No se puede modificar el capital en la base de datos')
 
 
 if __name__ == '__main__':

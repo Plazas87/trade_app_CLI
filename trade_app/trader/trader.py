@@ -1,4 +1,4 @@
-from ..orders import OrderComponents, OrderTypes
+from trade_app.orders import OrderComponents, OrderTypes, TradeComponents, TradeResults, Trade, TradeStatus
 from random import randint
 from datetime import datetime
 from ..custom_exceptions import CreateOrderException
@@ -15,30 +15,45 @@ class Trader:
 
     def prepare_order(self, order):
         try:
-            order = self.order_to_dict(order)
-            order['trader_id'] = self.id_trader
+            order.trader_id = int(self.id_trader)
 
-            if order[OrderComponents.order_type.name] == OrderTypes.buy.name:
-                cost = order[OrderComponents.buy_price.name] * order[OrderComponents.quantity.name]
+            if order.order_type == OrderTypes.buy.name:
+                cost = order.buy_price * order.quantity
 
-            else:
-                cost = order[OrderComponents.sell_price.name] * order[OrderComponents.quantity.name]
+            elif order.order_type == OrderTypes.sell.name:
+                cost = order.sell_price * order.quantity
 
-            order['cost'] = cost
+            order.cost = cost
 
-            return True, order
+            order_dict = self.order_to_dict(order)
+
+            return True, order_dict
+            # order = self.order_to_dict(order)
+            # order['trader_id'] = self.id_trader
+            #
+            # if order[OrderComponents.order_type.name] == OrderTypes.buy.name:
+            #     cost = order[OrderComponents.buy_price.name] * order[OrderComponents.quantity.name]
+            #
+            # else:
+            #     cost = order[OrderComponents.sell_price.name] * order[OrderComponents.quantity.name]
+            #
+            # order['cost'] = cost
+            #
+            # return True, order
 
         except Exception as e:
             print(e, "Can't create the order: ", e.args)
             return False, 0
 
-    def prepare_trade(self, order_dict):
-        order_dict['order_type'] = OrderTypes.trade.name
-        order_dict['trade_id'] = self._generates_id()
-        order_dict['profit'] = 0
-        order_dict['result'] = 0
+    def prepare_trade(self, order):
+        try:
+            trade = Trade(order, self._generates_id(), 0, TradeResults.waiting.value, TradeStatus.working.value)
+            trade_dict = self.trade_to_dict(trade)
 
-        return order_dict
+            return True, trade_dict
+        except Exception as e:
+            print(e)
+            return False, trade_dict
 
     def execute_order(self, order_dict):
         if order_dict[OrderComponents.order_type.name] == OrderTypes.buy.name:
@@ -89,7 +104,9 @@ class Trader:
                       OrderComponents.buy_price.name: order.buy_price,
                       OrderComponents.sell_price.name: order.sell_price,
                       OrderComponents.quantity.name: order.quantity,
-                      OrderComponents.order_type.name: order.order_type}
+                      OrderComponents.order_type.name: order.order_type,
+                      OrderComponents.trader_id.name: order.trader_id,
+                      OrderComponents.cost.name: order.cost}
         return order_dict
 
     @staticmethod
@@ -107,6 +124,16 @@ class Trader:
     #
     #     else:
     #         return False
+
+    @staticmethod
+    def trade_to_dict(trade):
+        trade_dict = Trader.order_to_dict(trade.order)
+        trade_dict[TradeComponents.trade_id.name] = trade.trade_id
+        trade_dict[TradeComponents.profit.name] = trade.profit
+        trade_dict[TradeComponents.result.name] = trade.result
+        trade_dict[TradeComponents.status.name] = trade.status
+
+        return trade_dict
 
 
 if __name__ == '__main__':

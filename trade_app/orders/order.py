@@ -4,17 +4,49 @@ from random import randint
 
 class Order:
     def __init__(self, ticker, buy_price, sell_price, quantity, order_id=None):
+
         self._timestamp = str(datetime.now())
         self._year = datetime.now().year
         self._month = datetime.now().month
         self._day = datetime.now().day
         self._hour = datetime.now().hour
         self._minute = datetime.now().minute
+        self._ticker = ticker
         self._buy_price = buy_price/1 if buy_price > 0 else 0.0
         self._sell_price = sell_price/1 if sell_price > 0 else 0.0
         self._quantity = quantity if quantity > 0 else 0
+        self._order_type = None
+        self._trader_id = None
+        self._cost = None
+
         self._id = order_id if order_id is not None else self._generates_id()
-        self._ticker = ticker
+
+    @property
+    def order_type(self):
+        return self._order_type
+
+    @order_type.setter
+    def order_type(self, value):
+        if isinstance(value, str):
+            self._order_type = value
+
+    @property
+    def trader_id(self):
+        return self._trader_id
+
+    @trader_id.setter
+    def trader_id(self, value):
+        if isinstance(value, int) and value > 0:
+            self._trader_id = value
+
+    @property
+    def cost(self):
+        return self._cost
+
+    @cost.setter
+    def cost(self, value):
+        if isinstance(value, float) and value > 0:
+            self._cost = value
 
     @property
     def id(self):
@@ -112,6 +144,7 @@ class Order:
 
 
 if __name__ == '__main__':
-    order = Order('NFLX', 0, 10, 0)
-    print(order)
+    order = Order('NFLX', 10, 0, 10)
+    keys = [a for a in dir(order) if not (a.startswith('__') or a.startswith('_')) and not callable(getattr(order, a))]
+    print(keys)
 
