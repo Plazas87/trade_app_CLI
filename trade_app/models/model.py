@@ -2,7 +2,7 @@ from datetime import datetime
 
 import psycopg2 as db
 from configparser import ConfigParser
-from trade_app.orders import OrderComponents, OrderTypes
+from trade_app.orders import OrderComponents, OrderTypes, TradeComponents
 from trade_app.config import ConfigEnum
 
 
@@ -51,25 +51,10 @@ class DatabaseController:
         conn = self.connect(process_information=info)
         if conn is not None:
             try:
-                query = "INSERT INTO orders VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                query = "INSERT INTO orders VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
                 cursor = conn.cursor()
                 data = tuple(order.values())
-                # error_row = []
                 cursor.execute(query, data)
-                # cursor.execute(query, (order[OrderComponents.id.name],
-                #                        order[OrderComponents.time_stamp.name],
-                #                        order[OrderComponents.year.name],
-                #                        order[OrderComponents.month.name],
-                #                        order[OrderComponents.day.name],
-                #                        order[OrderComponents.hour.name],
-                #                        order[OrderComponents.minute.name],
-                #                        order[OrderComponents.ticker.name],
-                #                        order[OrderComponents.buy_price.name],
-                #                        order[OrderComponents.sell_price.name],
-                #                        order[OrderComponents.quantity.name],
-                #                        order[OrderComponents.order_type.name],
-                #                        order[OrderComponents.trader_id.name],
-                #                        order[OrderComponents.cost.name]))
 
             except Exception as e:
                 # logging.error(
@@ -83,95 +68,6 @@ class DatabaseController:
                 cursor.close()
                 self.close_connection(conn)
             return True
-
-    # def update_capital(self, time_stamp, value):
-    #     try:
-    #         conn = self.connect()
-    #         with conn:
-    #             cursor = conn.cursor()
-    #             cursor.execute("INSERT INTO capital (timestamp, capital) VALUES (%s,%s)", (time_stamp, value))
-    #     except sqlite3.IntegrityError as e:
-    #         print(e, '- Error in model.py: {} method update_capital'.format(e.__traceback__.tb_lineno))
-
-    # def update_open_orders(self, id_, value=0, operation='update'):
-    #     """Esta función se encarga de actualizar los valores de la cantidad de acciones en el portadolio.
-    #     Esta función debe llamarse siempre que se ejecute una orden de venta"""
-    #     if operation == 'update':
-    #         try:
-    #             conn = self.connect()
-    #             strquery = 'UPDATE openOrders SET cantidad= %s WHERE id= %s'
-    #             values = (value, id_)
-    #             with conn:
-    #                 cursor = conn.cursor()
-    #                 cursor.execute(strquery, values)
-    #         except sqlite3.IntegrityError as e:
-    #             print(e)
-    #             print('No se puede modificar el capital en la base de datos')
-    #
-    #     elif operation == 'delete':
-    #         try:
-    #             conn = self.connect()
-    #             strquery = 'DELETE FROM openOrders WHERE id= %s'
-    #             values = (id_,)
-    #             with conn:
-    #                 cursor = conn.cursor()
-    #                 cursor.execute(strquery, values)
-    #                 # print('se ha elimiado la orden {} que estaba abierta'.format(id_))
-    #         except sqlite3.IntegrityError as e:
-    #             print(e)
-    #             print('No se puede modificar el capital en la base de datos')
-
-    def selectQuery(self, table_name, *columns, filter_table=None):
-        """Este método se encarga de realizar las consultas a todas las tablas de la base de datos del proyecto. Es lo
-        suficientemente versatil como para entender varios tipos de consultas a las diferentes tablas"""
-        query = []
-        cursor = ''
-        conn = ''
-        str_query = ''
-        if table_name == 'buyorders' or table_name == 'sellorders' or table_name == 'openorders':
-            if columns[0] == '*' and filter_table is None:
-                str_query = 'SELECT * FROM {0}'.format(table_name)
-
-            elif columns[0] != '*' and filter_table is None:
-                selected_columns = ', '.join(columns)
-                str_query = 'SELECT ' + selected_columns + ' FROM {0}'.format(table_name)
-
-            elif columns[0] == '*' and filter_table is not None:
-                str_query = "SELECT * FROM {0} WHERE id='{1}'".format(table_name, filter_table)
-
-            elif columns[0] != '*' and filter_table is not None:
-                selected_columns = ', '.join(columns)
-                str_query = "SELECT " + selected_columns + " FROM {0} WHERE id='{1}'".format(table_name, filter_table)
-
-        elif table_name == 'capital':
-            if (columns[0] == '*' or columns[0] == 'capital') and filter_table is None and table_name == 'capital':
-                str_query = 'SELECT {0} FROM {1} ORDER BY id_capital DESC'.format(columns[0], table_name)
-
-        elif table_name == 'users':
-            if columns[0] == '*' and filter_table is not None:
-                str_query = "SELECT {0} FROM {1} WHERE usuario='{2}'".format(columns[0], table_name, filter_table)
-
-        if str_query != '':
-            try:
-                conn = self.connect()
-                if conn is not None:
-                    cursor = conn.cursor()
-                    cursor.execute(str_query)
-                    query = cursor.fetchall()
-            except Exception as e:
-                print(e)
-                cursor.close()
-                self.close_connection(conn)
-                print("PostgreSQL connection has been closed but an Exception has been raised")
-                return None
-            else:
-                cursor.close()
-                self.close_connection(conn)
-                print("PostgreSQL connection is closed")
-                return query
-
-        else:
-            return None
 
     def load_open_orders(self):
         """Este método se encarga de poner en memoria las ordenes abiertas en el portafokio de modo que el usuario pueda
@@ -188,20 +84,6 @@ class DatabaseController:
             except Exception as e:
                 print(e, '- Error in model.py: {} method load_open_orders'.format(e.__traceback__.tb_lineno))
                 return None
-
-    def __query_to_dict(self, query):
-        """Esta función se encarga de transformar los objetos producidos por la clase order en diccionarios. Esta función
-        es opcional; su uso node siempre se requiere"""
-        lst = []
-        for row in query:
-            dict_order = {OrderComponents.time_stamp.name: row[OrderComponents.time_stamp.value],
-                          OrderComponents.id.name: row[OrderComponents.id.value],
-                          OrderComponents.ticker.name: row[OrderComponents.ticker.value],
-                          OrderComponents.order_type.name: row[OrderComponents.order_type.value],
-                          OrderComponents.buy_price.name: row[OrderComponents.buy_price.value],
-                          OrderComponents.quantity.name: row[OrderComponents.quantity.value]}
-            lst.append(dict_order)
-        return lst
 
     def _config(self, filename='./trade_app/config/configpostgres.ini', section='postgresql'):
         """Configura los parámetros para la conexión con la base de datos a través de la lectura de un
@@ -267,7 +149,7 @@ class DatabaseController:
                 self.close_connection(conn)
             return data_query
 
-    def validate_inital_capital(self):
+    def validate_initial_capital(self):
         conn = self.connect()
         if conn is not None:
             try:
@@ -312,15 +194,19 @@ class DatabaseController:
                 self.close_connection(conn)
             return True
 
-    def get_trades(self):
+    def get_trades(self, ticker):
         conn = self.connect()
         if conn is not None:
             try:
-                query = "SELECT trade_id, status, result, order_id, time_stamp, " \
-                        "ticker, buy_price, quantity, order_type, cost " \
-                        "FROM openorders ORDER BY time_stamp DESC"
+                query = "SELECT ticker, buy_price, quantity, " \
+                        "time_stamp, order_id, status, result " \
+                        "FROM openorders " \
+                        "WHERE ticker = (%s) AND status = true " \
+                        "ORDER BY time_stamp DESC"
+
+                data = (ticker,)
                 cursor = conn.cursor()
-                cursor.execute(query)
+                cursor.execute(query, data)
                 data_query = cursor.fetchall()
 
             except Exception as e:
@@ -335,11 +221,11 @@ class DatabaseController:
                 self.close_connection(conn)
             return data_query
 
-    def get_trade_by_id(self, id):
+    def get_order_by_id(self, id):
         conn = self.connect()
         if conn is not None:
             try:
-                query = "SELECT ticker, quantity FROM openorders WHERE trade_id = (%s)"
+                query = "SELECT ticker, quantity, trade_id FROM openorders WHERE order_id = (%s)"
                 data = (id,)
                 cursor = conn.cursor()
                 cursor.execute(query, data)
@@ -351,25 +237,68 @@ class DatabaseController:
                 print(e)
                 cursor.close()
                 self.close_connection(conn)
+                return False, []
 
             else:
                 cursor.close()
                 self.close_connection(conn)
-            return data_query
+            return True, data_query
 
-    def update_trade_by_id(self, order, trade_id):
+    def get_trade_by_id(self, id):
         conn = self.connect()
         if conn is not None:
             try:
-                query = "UPDATE openorders SET sell_price = 1100 where capital_id = 42;"
-                data = ()
+                query = "SELECT cost, sell_price, quantity FROM openorders WHERE trade_id = (%s) " \
+                        "AND status = true"
+                data = (id,)
                 cursor = conn.cursor()
                 cursor.execute(query, data)
-                data_query = cursor.fetchall()
+                data_query = cursor.fetchall()[0]
+                data_query = {OrderComponents.cost.name: data_query[0],
+                              OrderComponents.sell_price.name: data_query[1],
+                              OrderComponents.quantity.name: data_query[2]}
 
             except Exception as e:
+                # logging.error(
+                #     'Error: PostgreSQL connection has been closed but an Exception has been raised - {0}'.format(e))
                 print(e)
-                print('No se puede modificar el capital en la base de datos')
+                cursor.close()
+                self.close_connection(conn)
+                return False, {}
+
+            else:
+                cursor.close()
+                self.close_connection(conn)
+            return True, data_query
+
+    def update_trade_by_id(self, trade_to_update, trade_id):
+        conn = self.connect()
+        if conn is not None:
+            try:
+                query = "UPDATE openorders SET sell_price = %s, profit = %s, result = %s, status = %s " \
+                        "WHERE trade_id = %s;"
+                data = (trade_to_update[OrderComponents.sell_price.name],
+                        trade_to_update[TradeComponents.profit.name],
+                        trade_to_update[TradeComponents.result.name],
+                        trade_to_update[TradeComponents.status.name],
+                        trade_id)
+                cursor = conn.cursor()
+                cursor.execute(query, data)
+
+            except Exception as e:
+                # logging.error(
+                #     'Error: PostgreSQL connection has been closed but an Exception has been raised - {0}'.format(e))
+                print(e)
+                cursor.close()
+                self.close_connection(conn)
+                return False
+
+            else:
+                conn.commit()
+                cursor.close()
+                self.close_connection(conn)
+
+            return True
 
 
 if __name__ == '__main__':

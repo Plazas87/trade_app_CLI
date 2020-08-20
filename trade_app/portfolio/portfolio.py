@@ -1,5 +1,6 @@
-# from orders import Order, OpenOrderElement, CloseOrderElement, OrderTypes
-from random import randint, random
+from trade_app.orders import OrderComponents, TradeComponents, TradeStatus, TradeResults
+from random import randint
+
 
 
 class Portafolio:
@@ -28,27 +29,8 @@ class Portafolio:
         if isinstance(value, float) and value >= 0:
             self._capital = value
 
-    # metodo de la clase Portafolio
-    # def open_position(self, executed_order=None):
-    #     try:
-    #         print(' - Validando...')
-    #         print('    Connecting to the PostgreSQL database...')
-    #         temp_var = self.dtQuery.selectQuery('capital', 'capital')
-    #         print('    Capital disponible para ejecutar la orden (USD) : {}'.format(temp_var[0][0]))
-    #         if temp_var[0][0] > 0:
-    #             inv = executed_order[OpenOrderElement.buy_price.name] * executed_order[
-    #                 OpenOrderElement.quantity.name]
-    #             if temp_var[0][0] >= inv:
-    #                 print('    - Resultado de la validación: la orden se puede ejecutar')
-    #                 return True
-    #             else:
-    #                 print('    - Resultado de la validación: no dispone de capital para ejecutar la orden; no se ha enviado la orden')
-    #                 return False
-    #     except Exception as e:
-    #         print(e, '- Error in portafolio.py: {} method open_positon'.format(e.__traceback__.tb_lineno))
-
     def increase_capital(self, value):
-        if isinstance(value, float) and value >= 0:
+        if isinstance(value, float):
             self.capital += value
 
     def decrease_capital(self, value):
@@ -61,41 +43,30 @@ class Portafolio:
             else:
                 self.capital = tmp_capital
 
-    # def actualizar_capital(self, executed_order):
-    #     try:
-    #         capital = self.dtQuery.selectQuery('capital', '*')
-    #         if executed_order[OpenOrderElement.order_type.name] == OrderTypes.Compra.name:
-    #             inv = capital[0][2] - (
-    #                     executed_order[OpenOrderElement.buy_price.name] * executed_order[OpenOrderElement.quantity.name])
-    #             return inv
-    #         elif executed_order[CloseOrderElement.order_type.name] == OrderTypes.Venta.name:
-    #             inv = capital[0][2] + (
-    #                     executed_order[CloseOrderElement.SellPrice.name] * executed_order[CloseOrderElement.CloseCantidad.name])
-    #             return inv
-    #
-    #     except Exception as e:
-    #         print(e, '- Error in portafolio.py: {} method actualizar_capital'.format(e.__traceback__.tb_lineno))
-    #         return None
+    def calculate_profit(self, trade, sell_price):
+        trade[OrderComponents.sell_price.name] = sell_price
 
-    # def print_portafolio(self, stocks): # agregar un vallidación para cuando la tabla de open orders este abierta
-    #     try:
-    #         print('Portafolio:')
-    #         self._portafolio = {}
-    #         for load_order in self.dtQuery.load_open_orders():
-    #             keys = list(self._portafolio.keys())
-    #             if load_order[OpenOrderElement.ticker.name] in keys:
-    #                 self.portafolio[load_order[OpenOrderElement.ticker.name]].append(load_order)
-    #             else:
-    #                 self.portafolio[load_order[OpenOrderElement.ticker.name]] = []
-    #                 self.portafolio[load_order[OpenOrderElement.ticker.name]].append(load_order)
-    #
-    #         for ticker in self.portafolio.keys():
-    #             print('Open orders in {}'.format(ticker))
-    #             for order_ in self.portafolio[ticker]:
-    #                 print(order_)
-    #     except Exception as e:
-    #         print(e, '- Error in portafolio.py: {} method print_pottafolio'.format(e.__traceback__.tb_lineno))
-    #         print('La orden que está buscando no se encuentra abierta, por favor revise el id de la orden'
+        sell = sell_price * trade[OrderComponents.quantity.name]
+        profit = sell - trade[OrderComponents.cost.name]
+
+        trade[TradeComponents.profit.name] = profit
+
+        return trade
+
+    def update_status(self, trade, quantity):
+        if trade[OrderComponents.quantity.name] == quantity:
+            trade[TradeComponents.status.name] = TradeStatus.closed.value
+
+        return trade
+
+    def update_result(self, trade):
+        if trade[TradeComponents.profit.name] >= 0:
+            trade[TradeComponents.result.name] = TradeResults.positive.value
+
+        else:
+            trade[TradeComponents.result.name] = TradeResults.negative.value
+
+        return trade
 
 
 if __name__ == '__main__':

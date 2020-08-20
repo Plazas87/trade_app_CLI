@@ -1,7 +1,8 @@
 from .portfolio import Portafolio
 from .trader import Trader
-from .orders import OrderComponents, OrderTypes
+from .orders import OrderComponents, OrderTypes, TradeComponents
 from .models import DatabaseController
+import math
 from random import randint
 from configparser import ConfigParser
 
@@ -47,17 +48,18 @@ class Controller:
 
     def open_position(self, buy_order):
         try:
-            order_status, order_dict = self.trader.prepare_order(buy_order)
-            trade_status, trade_dict = self.trader.prepare_trade(buy_order)
-            if order_status and trade_status:
+            # order_status = self.trader.prepare_order(buy_order)
+            trade_status, trade_dict, order_dict = self.trader.prepare_trade(buy_order)
+
+            if trade_status:
                 if self.validate_buying_power(order_dict):
                     print(f'    Capital before execute the order (USD): {self.portfolio.capital}')
 
                     if self.trader.execute_order(order_dict):
                         self.update_capital(order_dict)
 
-                        if self._dbController.save_order(order_dict):
-                            self._dbController.open_trade(trade_dict)
+                        if self._dbController.open_trade(trade_dict):
+                            self._dbController.save_order(order_dict)
 
                             print(f'    Available capital for trade (USD): {self.portfolio.capital}')
 
@@ -65,9 +67,11 @@ class Controller:
 
                 else:
                     print('Not enough capital to trade')
+                    print(f'    Available capital for trade (USD): {self.portfolio.capital}')
+
                     return False, []
             else:
-                print(f'The trade is not valid - STATUS: {order_status == trade_status}')
+                print(f'The trade is not valid - STATUS: {trade_status}')
                 return False, []
 
         except Exception as e:
@@ -75,44 +79,46 @@ class Controller:
             return False, []
 
     def close_position(self, sell_order, trade_id):
-        open_trades, trade_list = self.get_open_trades()
+        try:
+            # order_ready, order_dict = self.trader.prepare_order(sell_order)
+            orders_status, trade_dict, order_dict = self.trader.prepare_trade(sell_order, trade_id=trade_id)
+            if orders_status:
 
-        if open_trades:
-            try:
-                order_ready, order_dict = self.trader.prepare_order(sell_order)
-                if order_ready:
-                    # open_trades, trade_list = self.get_open_trades(order_dict)
-                    # if open_trades:
-                    #     for index, trade in enumerate(trade_list):
-                    #         print(f'{index}. {trade}')
+                print(f'Capital before execute the close order: {self.portfolio.capital}')
+                if self.trader.execute_order(order_dict):
+                    # TODO: revisar como actualizar el capital y como actualizar el trade en la tabla opentrades
+                    self._dbController.save_order(order_dict)
 
-                    print(f'Capital before execute the close order: {self.portfolio.capital}')
-                    if self.trader.execute_order(order_dict):
-                        # TODO: revisar como actualizar el capital y como actualizar el trade en la tabla opentrades
-                        self._dbController.save_order(order_dict)
-                        self.trader.update_trade_to_close()
-                        self.update_capital(order_dict)
-                        self._dbController.update_trade_by_id(order_dict, trade_id)
+                    # TODO: traer el trade a actualizar
+                    status, trade_to_update = self._dbController.get_trade_by_id(trade_id)
+                    if status:
+                        trade_to_update = self.portfolio.calculate_profit(trade_to_update,
+                                                                          sell_order.sell_price)
+
+                        trade_to_update = self.portfolio.update_result(trade_to_update)
+                        trade_to_update = self.portfolio.update_status(trade_to_update,
+                                                                       sell_order.quantity)
+
+                        self.update_capital(order_dict, trade_to_update)
+                        self._dbController.update_trade_by_id(trade_to_update, trade_id)
 
                         print('Trade successfully executed.')
                         print(f'Capital after execute the close order: {self.portfolio.capital}')
 
-                        return True, order_dict
-                else:
-                    print(f'The trade is not valid - STATUS: {order_ready}')
-                    return False, []
-
-            except Exception as e:
+                    return True, order_dict, trade_to_update[TradeComponents.profit.name]
+            else:
+                print(f'The trade is not valid - STATUS: {orders_status}')
                 return False, []
 
-        else:
-            print('There is no open trades to close')
+        except Exception as e:
+            print(e)
             return False, []
 
     def validate_buying_power(self, order):
         cost = order[OrderComponents.buy_price.name] * order[OrderComponents.quantity.name]
         if cost > 0.0:
-            if cost <= (self.trader.max_buy_per_trade * self.portfolio.capital):
+            max_buy_per_trade = (self.trader.max_buy_per_trade * self.portfolio.capital)
+            if cost <= max_buy_per_trade:
                 return True
 
             else:
@@ -120,85 +126,9 @@ class Controller:
         else:
             return False
 
-    # def open_position(self, open_order):
-    #     try:
-    #         order = open_order.order_to_dict()
-    #         print()
-    #         print('Se ha creado la orden con las siguientes características:')
-    #         for key in order.keys():
-    #             print(' - ' + key + ': ', end='')
-    #             print(str(order[key]))
-    #
-    #         print()
-    #         if self.portfolio.open_position(order):
-    #             if self.trader.executeOrder(order):
-    #                 self.dbController.insert(order)
-    #                 # self.portafolio.print_portafolio(stocks)
-    #                 var = self.portfolio.actualizar_capital(order)
-    #                 if var is not None:
-    #                     self.dbController.update_capital(order[OpenOrderElement.time_stamp.name], var)
-    #                     print()
-    #                     print('    Capital disponible (USD) : {}'.format(var))
-    #                     print()
-    #         else:
-    #             pass
-    #     except Exception as e:
-    #         print(e, ' - No se puede ejecutar la acción. Hubo un error durante el proceso - ', e.args )
-
-    # def close_position(self):
-    #     print()
-    #     print(' - Cargando portafolio...')
-    #     print('    Connecting to the PostgreSQL database...')
-    #     print()
-    #     # portafolio.print_portafolio(stocks)
-    #     print()
-    #     id = int(input('Digite el ID de la orden que desea cerrar: '))
-    #     ticker = input('Digite el ticker de la orden: ')
-    #     close_order = SellOrder(ticker, id, OrderTypes.Venta.name, randint(1, 100), 5)
-    #     order = close_order.order_to_dict()
-    #     print()
-    #     print('Se ha creado la orden con las siguientes características:')
-    #     for key in order.keys():
-    #         print(' - ' + key + ': ', end='')
-    #         print(str(order[key]))
-    #
-    #     print()
-    #     try:
-    #         print(' - Validando...')
-    #         query = self.dbController.selectQuery('openorders', '*', filter_table=str(id))
-    #         if query is None or query[0][OpenOrderElement.ticker.value] != order[CloseOrderElement.ticker.name]:
-    #             print('Hay un error en el query o en el id de la orden, por favor revise que el id sea el correcto')
-    #         elif query[0][OpenOrderElement.quantity.value] < order[CloseOrderElement.CloseCantidad.name]:
-    #             print('Esta intentando vender mas acciones de las posee. La operación no se ha llevado a cabo')
-    #         else:
-    #             print('    Resultado de la validación: OK...')
-    #             if self.trader.execute_order(order):
-    #                 self.dbController.insert(order)
-    #                 value = query[0][OpenOrderElement.quantity.value] - order[CloseOrderElement.CloseCantidad.name]
-    #                 if value > 0:
-    #                     print('    Nueva cantidad de acciones', value)
-    #                     self.dbController.update_open_orders(str(id), value)
-    #                     var = self.portfolio.actualizar_capital(order)
-    #                     self.dbController.update_capital(order[CloseOrderElement.time_stamp.name], var)
-    #                     print()
-    #                     print('    Capital disponible (USD) : {}'.format(var))
-    #                     print()
-    #                 elif value == 0:
-    #                     print('    Cerrar posición completamente', value)
-    #                     self.dbController.update_open_orders(str(id), value, 'delete')
-    #                     var = self.portfolio.actualizar_capital(order)
-    #                     self.dbController.update_capital(order[OpenOrderElement.time_stamp.name], var)
-    #                     print()
-    #                     print('    Capital disponible (USD) : {}'.format(var))
-    #                     print()
-    #
-    #             # self.portafolio.print_portafolio(stocks)
-    #     except Exception as e:
-    #         print(e, '- Error in main.py: {} method load_open_orders'.format(e.__traceback__.tb_lineno))
-
     # TODO: check if there is an open trade with a given ID
-    def get_open_trades(self):
-        trade_list = self._dbController.get_trades()
+    def get_open_trades_ticker(self, ticker):
+        trade_list = self._dbController.get_trades(ticker=ticker)
         if len(trade_list) == 0:
             return False, trade_list
 
@@ -206,20 +136,21 @@ class Controller:
             return True, trade_list
 
     def validate_initial_capital(self):
-        is_initial = self._dbController.validate_inital_capital()
+        is_initial = self._dbController.validate_initial_capital()
 
         if is_initial:
             return False
         else:
             return True
 
-    def update_capital(self, order):
+    def update_capital(self, order, trade=None):
         if order[OrderComponents.order_type.name] == OrderTypes.buy.name:
             self.portfolio.decrease_capital(order[OrderComponents.cost.name])
             self.set_capital(self.portfolio.capital)
 
         elif order[OrderComponents.order_type.name] == OrderTypes.sell.name:
-            self.portfolio.increase_capital(order[OrderComponents.cost.name])
+            value = trade[TradeComponents.profit.name]
+            self.portfolio.increase_capital(value)
             self.set_capital(self.portfolio.capital)
 
     def set_capital(self, capital):
@@ -230,11 +161,15 @@ class Controller:
         return capital
 
     def get_active_trades(self):
-        self.get_open_trades()
+        self.get_open_trades_ticker()
 
     def get_open_trades_id(self, id):
-        trade = self._dbController.get_trade_by_id(id)
-        return trade
+        status, trade = self._dbController.get_order_by_id(id)
+        if status:
+            return True, trade
+
+        else:
+            False, trade
 
 
 if __name__ == '__main__':

@@ -2,20 +2,21 @@ from enum import Enum
 
 
 class OrderComponents(Enum):
-    time_stamp = 0
-    id = 1
-    year = 2
-    month = 3
-    day = 4
-    hour = 5
-    minute = 6
-    ticker = 7
-    buy_price = 8
-    sell_price = 9
-    quantity = 10
-    cost = 11
-    order_type = 12
-    trader_id = 13
+    order_id = 0
+    trade_id = 1
+    time_stamp = 2
+    year = 3
+    month = 4
+    day = 5
+    hour = 6
+    minute = 7
+    ticker = 8
+    buy_price = 9
+    sell_price = 10
+    quantity = 11
+    cost = 12
+    order_type = 13
+    trader_id = 14
 
 
 class TradeComponents(Enum):

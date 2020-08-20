@@ -4,7 +4,6 @@ from random import randint
 
 class Order:
     def __init__(self, ticker, buy_price, sell_price, quantity, order_id=None):
-
         self._timestamp = str(datetime.now())
         self._year = datetime.now().year
         self._month = datetime.now().month
@@ -19,7 +18,17 @@ class Order:
         self._trader_id = None
         self._cost = None
 
-        self._id = order_id if order_id is not None else self._generates_id()
+        self._order_id = order_id if order_id is not None else self._generates_id()
+        self._trade_id = 0
+
+    @property
+    def trade_id(self):
+        return self._trade_id
+
+    @trade_id.setter
+    def trade_id(self, value):
+        if isinstance(value, int) and value > 0:
+            self._trade_id = value
 
     @property
     def order_type(self):
@@ -49,8 +58,8 @@ class Order:
             self._cost = value
 
     @property
-    def id(self):
-        return self._id
+    def order_id(self):
+        return self._order_id
 
     @property
     def ticker(self):
