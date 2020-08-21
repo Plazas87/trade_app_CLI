@@ -86,10 +86,8 @@ class Controller:
 
                 print(f'Capital before execute the close order: {self.portfolio.capital}')
                 if self.trader.execute_order(order_dict):
-                    # TODO: revisar como actualizar el capital y como actualizar el trade en la tabla opentrades
                     self._dbController.save_order(order_dict)
 
-                    # TODO: traer el trade a actualizar
                     status, trade_to_update = self._dbController.get_trade_by_id(trade_id)
                     if status:
                         trade_to_update = self.portfolio.calculate_profit(trade_to_update,

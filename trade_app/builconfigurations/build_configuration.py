@@ -2,24 +2,23 @@
 
 from configparser import ConfigParser
 import logging
-from trade_app.config import ConfigEnum
+from trade_app.config import DataBaseConnection
 
 
 class BuildConfiguration:
-    """Esta clase se encarga de leer el archivo de configuración genral, las parametros leidos son almacenados como
+    """Esta clase se encarga de leer el archivo de configuración general, las parametros leidos son almacenados como
     propiedades del objeto que sera luego instanciado en la clase controller"""
-    def __init__(self, database='postgresql'):
+    def __init__(self, section='postgresql'):
         # logging.info("Built main configuration object")
         param = self._config()
-        self.user = param[database][ConfigEnum.user.name]
-        self._password = param[database][ConfigEnum.password.name]
-        self.address = param[database][ConfigEnum.address.name]
-        self.port = param[database][ConfigEnum.port.name]
-        self.database = param[database][ConfigEnum.database.name]
+        self.user = param[section][DataBaseConnection.user.name]
+        self._password = param[section][DataBaseConnection.password.name]
+        self.address = param[section][DataBaseConnection.address.name]
+        self.port = param[section][DataBaseConnection.port.name]
+        self.database = param[section][DataBaseConnection.database.name]
 
         # Built configuration for capital
         self.initial_capital = param['portfolio']['initial_capital']
-        # TODO:
 
     @staticmethod
     def _config(filename='./trade_app/config/configpostgres.ini', specific_section=None):
@@ -53,7 +52,7 @@ class BuildConfiguration:
 
 
 if __name__ == '__main__':
-    c = BuildConfiguration()
+    c = BuildConfiguration(section=['postgresql', 'portfolio'])
     print(c)
 
 

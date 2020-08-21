@@ -1,12 +1,12 @@
 from .builconfigurations import BuildConfiguration
 from .app import Controller
 from .orders import BuyOrder, SellOrder
-import time
 from random import randint
 
 
 if __name__ == '__main__':
-    configuration_obj = BuildConfiguration(database='postgresql')
+    # TODO: change Buildconfiguration method. It is not working as well as I want.
+    configuration_obj = BuildConfiguration(section='postgresql')
     controller = Controller(configuration_obj, 0.005, 0.03, 0.3)
     controller.run()
 
@@ -17,7 +17,7 @@ if __name__ == '__main__':
             'Digite la opción que desea ejecutar: 1 para compra, 2 para venta y 0 para salir \nDigite una opción: ')
         if interface == '1':
             try:
-                buy_order = BuyOrder(stocks[0], buy_price=randint(25, 40), quantity=randint(1, 10))
+                buy_order = BuyOrder(stocks[0], buy_price=randint(1, 40), quantity=randint(1, 10))
                 print(f'Order cost: {buy_order.buy_price * buy_order.quantity}')
                 status, order_dict = controller.open_position(buy_order)
                 if status:
@@ -51,7 +51,7 @@ if __name__ == '__main__':
                 status, trade_to_close = controller.get_open_trades_id(trade_id)
 
                 if status:
-                    sell_order = SellOrder(trade_to_close[0], sell_price=randint(1, 10), quantity=trade_to_close[1])
+                    sell_order = SellOrder(trade_to_close[0], sell_price=randint(20, 100), quantity=trade_to_close[1])
                     order_status, order_dict, profit = controller.close_position(sell_order, trade_to_close[2])
                     print()
 

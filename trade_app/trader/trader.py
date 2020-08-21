@@ -126,7 +126,4 @@ class Trader:
 
 
 if __name__ == '__main__':
-    buy_order = BuyOrder('NFLX', buy_price=10, quantity=3)
-    portfolio = Portafolio(1000)
-    trader = Trader(0.005, 0.03, 0.03, portfolio.capital)
-    trader.prepare_order(buy_order)
+    pass

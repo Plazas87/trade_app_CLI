@@ -3,7 +3,7 @@ from datetime import datetime
 import psycopg2 as db
 from configparser import ConfigParser
 from trade_app.orders import OrderComponents, OrderTypes, TradeComponents
-from trade_app.config import ConfigEnum
+from trade_app.config import DataBaseConnection
 
 
 class DatabaseController:
@@ -13,11 +13,11 @@ class DatabaseController:
 
     def __init__(self, db):
         params = self._config()
-        self.user = params[db][ConfigEnum.user.name]
-        self._password = params[db][ConfigEnum.password.name]
-        self.address = params[db][ConfigEnum.address.name]
-        self.port = params[db][ConfigEnum.port.name]
-        self.database = params[db][ConfigEnum.database.name]
+        self.user = params[db][DataBaseConnection.user.name]
+        self._password = params[db][DataBaseConnection.password.name]
+        self.address = params[db][DataBaseConnection.address.name]
+        self.port = params[db][DataBaseConnection.port.name]
+        self.database = params[db][DataBaseConnection.database.name]
 
     def __new__(cls, name=None, params=None):
         if not hasattr(cls, 'instance'):  # Si no existe el atributo “instance”

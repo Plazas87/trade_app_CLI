@@ -1,1 +1,1 @@
-from .built_configuration import BuildConfiguration
+from .build_configuration import BuildConfiguration
