@@ -12,6 +12,7 @@ class DatabaseController:
         y pueda ejecutar todos los comandos SQL"""
 
     def __init__(self, db_config_obj):
+        self.connection_status = False
         self._user = db_config_obj[DataBaseConnection.user.name]
         self._password = db_config_obj[DataBaseConnection.password.name]
         self._address = db_config_obj[DataBaseConnection.address.name]
@@ -59,42 +60,46 @@ class DatabaseController:
         if isinstance(value, str):
             self._database = value
 
-    def connect(self, process_information='put some here'):
+    def connect(self):
+        """Establishes a connection with the database"""
         try:
-            # connect to the PostgreSQL server
-            conn = None
+            # conn = None
             conn = db.connect(user=self.user,
                               password=self._password,
                               host=self.address,
                               port=self.port,
                               database=self.database)
+
+            self.connection_status = True
             return conn
         except Exception as e:
-            # logging.error('Unable to connect' + str(e))
+            print(f'Error while connecting to the database: {e}')
             return None
 
     def close_connection(self, connection):
-        """Termina la conexión con la base de datos. Esta función de ser llamada siempre despues de cualquier
-        operación en la base de datos"""
+        """Close the connection with the database"""
         try:
             connection.close()
+            self.connection_status = False
         except Exception as e:
             print('Unable to close the connection -', e, ': ', e.__traceback__.tb_frame)
             return None
 
     def save_order(self, order, info=None):
-        conn = self.connect(process_information=info)
+        """Save the orders into database"""
+        # connect with database
+        conn = self.connect()
+
+        query = "INSERT INTO orders VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+
         if conn is not None:
+            cursor = conn.cursor()
             try:
-                query = "INSERT INTO orders VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-                cursor = conn.cursor()
                 data = tuple(order.values())
                 cursor.execute(query, data)
 
             except Exception as e:
-                # logging.error(
-                #     'Error: PostgreSQL connection has been closed but an Exception has been raised - {0}'.format(e))
-                print(e)
+                print(f'Error while saving the order: {e}')
                 cursor.close()
                 self.close_connection(conn)
                 return False
@@ -104,21 +109,24 @@ class DatabaseController:
                 self.close_connection(conn)
             return True
 
-    def load_open_orders(self):
-        """Este método se encarga de poner en memoria las ordenes abiertas en el portafokio de modo que el usuario pueda
-        verlas en la pantalla cada vez que vaya a abrir o cerrar una orden"""
-        conn = self.connect()
-        strquery = 'SELECT * FROM openorders'
-        with conn:
-            cur = conn.cursor()
-            try:
-                cur.execute(strquery)
-                query = cur.fetchall()
-                dict_query = self.__query_to_dict(query)
-                return dict_query
-            except Exception as e:
-                print(e, '- Error in database_controller.py: {} method load_open_orders'.format(e.__traceback__.tb_lineno))
-                return None
+    # def load_open_orders(self):
+    #     """This method is in charge of putting in memory the open trades so that the user can
+    #     see them on the screen every time open or close an order"""
+    #
+    #     # connect to database
+    #     conn = self.connect()
+    #     strquery = 'SELECT * FROM openorders'
+    #
+    #     with conn:
+    #         cur = conn.cursor()
+    #         try:
+    #             cur.execute(strquery)
+    #             query = cur.fetchall()
+    #             dict_query = self.__query_to_dict(query)
+    #             return dict_query
+    #         except Exception as e:
+    #             print(e, '- Error in database_controller.py: {} method load_open_orders'.format(e.__traceback__.tb_lineno))
+    #             return None
 
     def save_capital(self, capital, info=None):
         conn = self.connect(process_information=info)
@@ -209,24 +217,27 @@ class DatabaseController:
             return True
 
     def get_trades(self, ticker):
+        """This method is in charge of putting in memory the open trades so that the user can
+        see them on the screen every time open or close an order"""
+        # connect with database
         conn = self.connect()
+
+        query = "SELECT ticker, buy_price, quantity, " \
+                "time_stamp, order_id, status, result " \
+                "FROM openorders " \
+                "WHERE ticker = (%s) AND status = true " \
+                "ORDER BY time_stamp DESC"
+
+        cursor = conn.cursor()
+
         if conn is not None:
             try:
-                query = "SELECT ticker, buy_price, quantity, " \
-                        "time_stamp, order_id, status, result " \
-                        "FROM openorders " \
-                        "WHERE ticker = (%s) AND status = true " \
-                        "ORDER BY time_stamp DESC"
-
                 data = (ticker,)
-                cursor = conn.cursor()
                 cursor.execute(query, data)
                 data_query = cursor.fetchall()
 
             except Exception as e:
-                # logging.error(
-                #     'Error: PostgreSQL connection has been closed but an Exception has been raised - {0}'.format(e))
-                print(e)
+                print(f'Error while reading open trades: {e}')
                 cursor.close()
                 self.close_connection(conn)
 
