@@ -1,8 +1,8 @@
-from trade_app.orders import OrderComponents, OrderTypes, TradeComponents, TradeResults, Trade, TradeStatus
-from .config_trade import ConfigTrade
+from trade_app.orders import OrderComponents, OrderTypes, TradeComponents, TradeResults, TradeStatus
+from trade_app.trade import Trade
+from trade_app.config.config_trade import ConfigTrade
 from random import randint
 from datetime import datetime
-from ..custom_exceptions import CreateOrderException
 
 
 class Trader:

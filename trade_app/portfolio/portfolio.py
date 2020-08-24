@@ -1,6 +1,5 @@
 from trade_app.orders import OrderComponents, TradeComponents, TradeStatus, TradeResults
-from .config_portfolio import ConfigPortfolio
-from random import randint
+from trade_app.config.config_portfolio import ConfigPortfolio
 
 
 class Portafolio:

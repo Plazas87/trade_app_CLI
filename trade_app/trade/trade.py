@@ -1,4 +1,4 @@
-from .order import Order
+from trade_app.orders import Order
 
 
 class Trade:

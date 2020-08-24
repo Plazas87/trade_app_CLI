@@ -1,7 +1,7 @@
 from .portfolio import Portafolio
 from .trader import Trader
 from .orders import OrderComponents, OrderTypes, TradeComponents
-from .models import DatabaseController
+from .database_controller import DatabaseController
 from .config import ConfigFileSection
 import math
 from random import randint

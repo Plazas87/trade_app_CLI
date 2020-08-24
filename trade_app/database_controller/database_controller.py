@@ -117,7 +117,7 @@ class DatabaseController:
                 dict_query = self.__query_to_dict(query)
                 return dict_query
             except Exception as e:
-                print(e, '- Error in model.py: {} method load_open_orders'.format(e.__traceback__.tb_lineno))
+                print(e, '- Error in database_controller.py: {} method load_open_orders'.format(e.__traceback__.tb_lineno))
                 return None
 
     def save_capital(self, capital, info=None):
