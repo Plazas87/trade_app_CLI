@@ -3,9 +3,6 @@ from .trader import Trader
 from .orders import OrderComponents, OrderTypes, TradeComponents
 from .database_controller import DatabaseController
 from .config import ConfigFileSection
-import math
-from random import randint
-from configparser import ConfigParser
 
 
 class Controller:
@@ -30,31 +27,14 @@ class Controller:
     def run(self):
         self.status = True
 
-    def check_user(self, user, pwrd):
-        user_query = self._dbController.selectQuery('users', '*', filter_table=user)
-        return self._validate_user(user, pwrd, user_query)
-
-    def _validate_user(self, user, pwrd, user_query):
-        if user_query:
-            user_query = user_query[0]
-            if user in user_query:
-                if pwrd in user_query:
-                    return True
-                else:
-                    return False
-            else:
-                return False
-        else:
-            return False
-
     def open_position(self, buy_order):
         try:
-            # order_status = self.trader.prepare_order(buy_order)
             trade_status, trade_dict, order_dict = self.trader.prepare_trade(buy_order)
 
             if trade_status:
                 if self.validate_buying_power(order_dict):
                     print(f'    Capital before execute the order (USD): {self.portfolio.capital}')
+                    print()
 
                     if self.trader.execute_order(order_dict):
                         self.update_capital(order_dict)
@@ -98,7 +78,7 @@ class Controller:
                         trade_to_update = self.portfolio.update_status(trade_to_update,
                                                                        sell_order.quantity)
 
-                        self.update_capital(order_dict, trade_to_update)
+                        self.update_capital(order_dict)
                         self._dbController.update_trade_by_id(trade_to_update, trade_id)
 
                         print('Trade successfully executed.')
@@ -142,13 +122,13 @@ class Controller:
         else:
             return True
 
-    def update_capital(self, order, trade=None):
+    def update_capital(self, order, sell=None):
         if order[OrderComponents.order_type.name] == OrderTypes.buy.name:
             self.portfolio.decrease_capital(order[OrderComponents.cost.name])
             self._set_capital(self.portfolio.capital)
 
         elif order[OrderComponents.order_type.name] == OrderTypes.sell.name:
-            value = trade[TradeComponents.profit.name]
+            value = order[OrderComponents.cost.name]
             self.portfolio.increase_capital(value)
             self._set_capital(self.portfolio.capital)
 
@@ -165,10 +145,10 @@ class Controller:
     def get_open_trades_id(self, id):
         status, trade = self._dbController.get_order_by_id(id)
         if status:
-            return True, trade
+            return status, trade
 
         else:
-            False, trade
+            status, trade
 
 
 if __name__ == '__main__':

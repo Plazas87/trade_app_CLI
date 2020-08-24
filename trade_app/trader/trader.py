@@ -40,7 +40,7 @@ class Trader:
 
             trade = Trade(order, self._generates_id(), 0, TradeResults.waiting.value, TradeStatus.working.value)
 
-            if trade is not None:
+            if trade_id is not None:
                 order.trade_id = trade_id
 
             else:
