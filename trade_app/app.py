@@ -2,6 +2,7 @@ from .portfolio import Portafolio
 from .trader import Trader
 from .orders import OrderComponents, OrderTypes, TradeComponents
 from .models import DatabaseController
+from .config import ConfigFileSection
 import math
 from random import randint
 from configparser import ConfigParser
@@ -10,18 +11,18 @@ from configparser import ConfigParser
 class Controller:
     def __init__(self, config_obj, max_lost_per_trade, max_lost_per_day, max_buy_per_trade):
         # Initializes database controller for session
-        self._dbController = DatabaseController('postgresql')
+        self._dbController = DatabaseController(config_obj[ConfigFileSection.postgresql.name])
 
         # initializes capital for session
         if self.validate_initial_capital():
-            self.portfolio = Portafolio(config_obj.initial_capital)
-            self.set_capital(config_obj.initial_capital)
+            self.portfolio = Portafolio(config_obj[ConfigFileSection.portfolio.name], is_initial=True)
+            self._set_capital(self.portfolio.capital)
 
         else:
             self.portfolio = Portafolio(self.get_capital())
 
         # Initializes trader for session
-        self.trader = Trader(max_lost_per_trade, max_lost_per_day, max_buy_per_trade)
+        self.trader = Trader(config_obj[ConfigFileSection.trader.name])
 
         self.status = False
         print('Your trader ID para esta sesión is:', self.trader.id_trader)
@@ -144,14 +145,14 @@ class Controller:
     def update_capital(self, order, trade=None):
         if order[OrderComponents.order_type.name] == OrderTypes.buy.name:
             self.portfolio.decrease_capital(order[OrderComponents.cost.name])
-            self.set_capital(self.portfolio.capital)
+            self._set_capital(self.portfolio.capital)
 
         elif order[OrderComponents.order_type.name] == OrderTypes.sell.name:
             value = trade[TradeComponents.profit.name]
             self.portfolio.increase_capital(value)
-            self.set_capital(self.portfolio.capital)
+            self._set_capital(self.portfolio.capital)
 
-    def set_capital(self, capital):
+    def _set_capital(self, capital):
         return self._dbController.save_capital(capital)
 
     def get_capital(self):

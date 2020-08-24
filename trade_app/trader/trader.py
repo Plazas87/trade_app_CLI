@@ -1,4 +1,5 @@
 from trade_app.orders import OrderComponents, OrderTypes, TradeComponents, TradeResults, Trade, TradeStatus
+from .config_trade import ConfigTrade
 from random import randint
 from datetime import datetime
 from ..custom_exceptions import CreateOrderException
@@ -6,12 +7,12 @@ from ..custom_exceptions import CreateOrderException
 
 class Trader:
 
-    def __init__(self, max_lost_per_trade, max_lost_per_day, max_buy_per_trade):
+    def __init__(self, config_obj):
         self.platform_confirmation = False
         self.id_trader = self.generate_id()
-        self.max_lost_per_trade = max_lost_per_trade
-        self.max_lost_per_day = max_lost_per_day
-        self.max_buy_per_trade = max_buy_per_trade
+        self.max_lost_per_trade = float(config_obj[ConfigTrade.max_lost_per_trade.name])
+        self.max_lost_per_day = float(config_obj[ConfigTrade.max_lost_per_day.name])
+        self.max_buy_per_trade = float(config_obj[ConfigTrade.max_buy_per_trade.name])
 
     def prepare_order(self, order):
         try:

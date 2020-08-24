@@ -5,9 +5,9 @@ from random import randint
 
 
 if __name__ == '__main__':
-    # TODO: change Buildconfiguration method. It is not working as well as I want.
-    configuration_obj = BuildConfiguration(section='postgresql')
-    controller = Controller(configuration_obj, 0.005, 0.03, 0.3)
+    # TODO: change Buildconfiguration method. It is not working good enough.
+    configuration_obj = BuildConfiguration()
+    controller = Controller(configuration_obj.config_obj, 0.005, 0.03, 0.3)
     controller.run()
 
     stocks = ['NFLX', 'SPY']

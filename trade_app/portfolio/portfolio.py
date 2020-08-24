@@ -1,4 +1,5 @@
 from trade_app.orders import OrderComponents, TradeComponents, TradeStatus, TradeResults
+from .config_portfolio import ConfigPortfolio
 from random import randint
 
 
@@ -8,16 +9,14 @@ class Portafolio:
     # _capital = 0
     # # dtQuery = DatabaseController()
 
-    def __init__(self, initial_value):
-        self._capital = int(initial_value) if int(initial_value) >= 0 else 0.0
+    def __init__(self, config_obj, is_initial=False):
 
-    # @property
-    # def portafolio(self):
-    #     return self._portafolio
+        if is_initial:
+            self._capital = int(config_obj[ConfigPortfolio.initial_capital.name]) if int(
+                config_obj[ConfigPortfolio.initial_capital.name]) >= 0 else 0.0
 
-    # @portafolio.setter
-    # def portafolio(self, executed_order):
-    #     self.open_position(executed_order)
+        else:
+            self._capital = config_obj
 
     @property
     def capital(self):

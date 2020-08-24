@@ -10,15 +10,7 @@ class BuildConfiguration:
     propiedades del objeto que sera luego instanciado en la clase controller"""
     def __init__(self, section='postgresql'):
         # logging.info("Built main configuration object")
-        param = self._config()
-        self.user = param[section][DataBaseConnection.user.name]
-        self._password = param[section][DataBaseConnection.password.name]
-        self.address = param[section][DataBaseConnection.address.name]
-        self.port = param[section][DataBaseConnection.port.name]
-        self.database = param[section][DataBaseConnection.database.name]
-
-        # Built configuration for capital
-        self.initial_capital = param['portfolio']['initial_capital']
+        self.config_obj = self._config()
 
     @staticmethod
     def _config(filename='./trade_app/config/configpostgres.ini', specific_section=None):
@@ -42,13 +34,6 @@ class BuildConfiguration:
 
         except Exception as e:
             print(e)
-
-    def __str__(self):
-        return f'User: {self.user} - ' \
-               f'Password: {self._password} - ' \
-               f'Address: {self.address} - ' \
-               f'Port: {self.port} - ' \
-               f'Database connection: {self.database}'
 
 
 if __name__ == '__main__':

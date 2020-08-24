@@ -11,18 +11,53 @@ class DatabaseController:
     """Clase que controla la conexión a la base de datos. Esta clase ira creciendo hasta que sea completamente funcional
         y pueda ejecutar todos los comandos SQL"""
 
-    def __init__(self, db):
-        params = self._config()
-        self.user = params[db][DataBaseConnection.user.name]
-        self._password = params[db][DataBaseConnection.password.name]
-        self.address = params[db][DataBaseConnection.address.name]
-        self.port = params[db][DataBaseConnection.port.name]
-        self.database = params[db][DataBaseConnection.database.name]
+    def __init__(self, db_config_obj):
+        self._user = db_config_obj[DataBaseConnection.user.name]
+        self._password = db_config_obj[DataBaseConnection.password.name]
+        self._address = db_config_obj[DataBaseConnection.address.name]
+        self._port = db_config_obj[DataBaseConnection.port.name]
+        self._database = db_config_obj[DataBaseConnection.database.name]
 
     def __new__(cls, name=None, params=None):
         if not hasattr(cls, 'instance'):  # Si no existe el atributo “instance”
             cls.instance = super(DatabaseController, cls).__new__(cls)  # lo creamos
         return cls.instance
+
+    @property
+    def user(self):
+        return self._user
+
+    @user.setter
+    def user(self, value):
+        if isinstance(value, str):
+            self._user = value
+
+    @property
+    def address(self):
+        return self._address
+
+    @address.setter
+    def address(self, value):
+        if isinstance(value, str):
+            self._address = value
+
+    @property
+    def port(self):
+        return self._port
+
+    @port.setter
+    def port(self, value):
+        if isinstance(value, int):
+            self._port = value
+
+    @property
+    def database(self):
+        return self._database
+
+    @database.setter
+    def database(self, value):
+        if isinstance(value, str):
+            self._database = value
 
     def connect(self, process_information='put some here'):
         try:
@@ -84,27 +119,6 @@ class DatabaseController:
             except Exception as e:
                 print(e, '- Error in model.py: {} method load_open_orders'.format(e.__traceback__.tb_lineno))
                 return None
-
-    def _config(self, filename='./trade_app/config/configpostgres.ini', section='postgresql'):
-        """Configura los parámetros para la conexión con la base de datos a través de la lectura de un
-                archivo de configuración de extención .ini"""
-        conf = ConfigParser()
-        try:
-            conf.read(filename)
-            config_file_dict = {}
-            tmp = {}
-            for sect in conf.sections():
-                params = conf.items(sect)
-                for param in params:
-                    tmp[param[0]] = param[1]
-
-                config_file_dict[sect] = tmp
-                tmp = {}
-
-            return config_file_dict
-
-        except Exception as e:
-            print(e)
 
     def save_capital(self, capital, info=None):
         conn = self.connect(process_information=info)

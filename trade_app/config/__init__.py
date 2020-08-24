@@ -1,2 +1,2 @@
 from .db_structures import DataBaseConnection
-from .configfile_structure import ConfigFileSection
+from .config_file_structure import ConfigFileSection
