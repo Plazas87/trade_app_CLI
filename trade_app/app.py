@@ -1,6 +1,7 @@
 from .portfolio import Portfolio
 from .trader import Trader
-from .orders import OrderComponents, OrderTypes, TradeComponents
+from .orders import OrderComponents, OrderTypes
+from .trade import TradeComponents
 from .database_controller import DatabaseController
 from .config import ConfigFileSection
 
@@ -111,7 +112,7 @@ class Controller:
         else:
             return False
 
-    def get_open_trades_ticker(self, ticker):
+    def get_open_trades_ticker(self, ticker=None):
         trade_list = self._dbController.get_trades(ticker=ticker)
         if len(trade_list) == 0:
             return False, trade_list

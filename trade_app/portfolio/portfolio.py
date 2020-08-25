@@ -1,4 +1,5 @@
-from trade_app.orders import OrderComponents, TradeComponents, TradeStatus, TradeResults
+from trade_app.orders import OrderComponents
+from trade_app.trade import TradeComponents, TradeStatus, TradeResults
 from trade_app.config.config_portfolio import ConfigPortfolio
 
 

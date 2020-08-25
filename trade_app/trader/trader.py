@@ -1,4 +1,5 @@
-from trade_app.orders import OrderComponents, OrderTypes, TradeComponents, TradeResults, TradeStatus
+from trade_app.orders import OrderComponents, OrderTypes
+from trade_app.trade import TradeComponents, TradeResults, TradeStatus
 from trade_app.trade import Trade
 from trade_app.config.config_trade import ConfigTrade
 from random import randint
@@ -9,10 +10,14 @@ class Trader:
 
     def __init__(self, config_obj):
         self.platform_confirmation = False
-        self.id_trader = self.generate_trader_id()
+        self._id_trader = self.generate_trader_id()
         self.max_lost_per_trade = float(config_obj[ConfigTrade.max_lost_per_trade.name])
         self.max_lost_per_day = float(config_obj[ConfigTrade.max_lost_per_day.name])
         self.max_buy_per_trade = float(config_obj[ConfigTrade.max_buy_per_trade.name])
+
+    @property
+    def id_trader(self):
+        return self._id_trader
 
     def prepare_order(self, order):
         try:
@@ -65,7 +70,8 @@ class Trader:
 
             except Exception as e:
                 print(e, '- Error in trader.py: {} method executeOrder'.format(e.__traceback__.tb_lineno))
-                return False
+                self.platform_confirmation = False
+                return self.platform_confirmation
 
         elif order_dict[OrderComponents.order_type.name] == OrderTypes.sell.name:
             try:

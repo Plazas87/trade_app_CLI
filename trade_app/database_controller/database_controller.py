@@ -1,7 +1,8 @@
 import psycopg2 as db
 from datetime import datetime
 
-from trade_app.orders import OrderComponents, TradeComponents
+from trade_app.orders import OrderComponents
+from trade_app.trade import TradeComponents
 from trade_app.config import DataBaseConnection
 
 
@@ -222,11 +223,19 @@ class DatabaseController:
         # connect with database
         conn = self._connect()
 
-        query = "SELECT ticker, buy_price, quantity, " \
-                "time_stamp, order_id, status, result " \
-                "FROM openorders " \
-                "WHERE ticker = (%s) AND status = true " \
-                "ORDER BY time_stamp DESC"
+        if ticker is None:
+            query = "SELECT ticker, buy_price, quantity, " \
+                    "time_stamp, order_id, status, result " \
+                    "FROM openorders " \
+                    "WHERE status = true " \
+                    "ORDER BY time_stamp DESC"
+
+        else:
+            query = "SELECT ticker, buy_price, quantity, " \
+                    "time_stamp, order_id, status, result " \
+                    "FROM openorders " \
+                    "WHERE ticker = (%s) AND status = true " \
+                    "ORDER BY time_stamp DESC"
 
         if conn is not None:
             cursor = conn.cursor()
