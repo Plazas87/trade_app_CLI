@@ -1,4 +1,4 @@
-from .portfolio import Portafolio
+from .portfolio import Portfolio
 from .trader import Trader
 from .orders import OrderComponents, OrderTypes, TradeComponents
 from .database_controller import DatabaseController
@@ -7,18 +7,18 @@ from .config import ConfigFileSection
 
 class Controller:
     def __init__(self, config_obj, max_lost_per_trade, max_lost_per_day, max_buy_per_trade):
-        # Initializes database controller for session
+        # Database controller
         self._dbController = DatabaseController(config_obj[ConfigFileSection.postgresql.name])
 
-        # initializes capital for session
+        # Portfolio management
         if self.validate_initial_capital():
-            self.portfolio = Portafolio(config_obj[ConfigFileSection.portfolio.name], is_initial=True)
+            self.portfolio = Portfolio(config_obj[ConfigFileSection.portfolio.name], is_initial=True)
             self._set_capital(self.portfolio.capital)
 
         else:
-            self.portfolio = Portafolio(self.get_capital())
+            self.portfolio = Portfolio(self.get_capital())
 
-        # Initializes trader for session
+        # Trader for this session
         self.trader = Trader(config_obj[ConfigFileSection.trader.name])
 
         self.status = False
@@ -71,12 +71,18 @@ class Controller:
 
                     status, trade_to_update = self._dbController.get_trade_by_id(trade_id)
                     if status:
-                        trade_to_update = self.portfolio.calculate_profit(trade_to_update,
-                                                                          sell_order.sell_price)
 
-                        trade_to_update = self.portfolio.update_result(trade_to_update)
-                        trade_to_update = self.portfolio.update_status(trade_to_update,
-                                                                       sell_order.quantity)
+                        trade_to_update = self.trader.update_sell_price(trade_to_update,
+                                                                        sell_order.sell_price)
+
+                        trade_to_update = self.trader.update_profit(trade_to_update,
+                                                                    sell_order.cost)
+
+                        trade_to_update = self.trader.update_quantity(trade_to_update,
+                                                                      sell_order.quantity)
+
+                        trade_to_update = self.trader.update_result(trade_to_update)
+                        trade_to_update = self.trader.update_status(trade_to_update)
 
                         self.update_capital(order_dict)
                         self._dbController.update_trade_by_id(trade_to_update, trade_id)
@@ -105,7 +111,6 @@ class Controller:
         else:
             return False
 
-    # TODO: check if there is an open trade with a given ID
     def get_open_trades_ticker(self, ticker):
         trade_list = self._dbController.get_trades(ticker=ticker)
         if len(trade_list) == 0:
@@ -142,13 +147,13 @@ class Controller:
     def get_active_trades(self):
         self.get_open_trades_ticker()
 
-    def get_open_trades_id(self, id):
-        status, trade = self._dbController.get_order_by_id(id)
+    def get_open_trades_id(self, trade_id):
+        status, trade = self._dbController.get_order_by_id(trade_id)
         if status:
             return status, trade
 
         else:
-            status, trade
+            return status, trade
 
 
 if __name__ == '__main__':

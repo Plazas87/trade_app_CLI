@@ -2,12 +2,7 @@ from trade_app.orders import OrderComponents, TradeComponents, TradeStatus, Trad
 from trade_app.config.config_portfolio import ConfigPortfolio
 
 
-class Portafolio:
-    # _portafolio = {}
-    # _portafolio_closed_orders = {}
-    # _capital = 0
-    # # dtQuery = DatabaseController()
-
+class Portfolio:
     def __init__(self, config_obj, is_initial=False):
 
         if is_initial:
@@ -39,32 +34,6 @@ class Portafolio:
 
             else:
                 self.capital = tmp_capital
-
-    def calculate_profit(self, trade, sell_price):
-        trade[OrderComponents.sell_price.name] = sell_price
-
-        sell = sell_price * trade[OrderComponents.quantity.name]
-        profit = sell - trade[OrderComponents.cost.name]
-
-        trade[TradeComponents.profit.name] = profit
-
-        return trade
-
-    # TODO: This method needs to change ir order to enable partial close orders
-    def update_status(self, trade, quantity):
-        if trade[OrderComponents.quantity.name] == quantity:
-            trade[TradeComponents.status.name] = TradeStatus.closed.value
-
-        return trade
-
-    def update_result(self, trade):
-        if trade[TradeComponents.profit.name] >= 0:
-            trade[TradeComponents.result.name] = TradeResults.positive.value
-
-        else:
-            trade[TradeComponents.result.name] = TradeResults.negative.value
-
-        return trade
 
 
 if __name__ == '__main__':

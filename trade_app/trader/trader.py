@@ -9,7 +9,7 @@ class Trader:
 
     def __init__(self, config_obj):
         self.platform_confirmation = False
-        self.id_trader = self.generate_id()
+        self.id_trader = self.generate_trader_id()
         self.max_lost_per_trade = float(config_obj[ConfigTrade.max_lost_per_trade.name])
         self.max_lost_per_day = float(config_obj[ConfigTrade.max_lost_per_day.name])
         self.max_buy_per_trade = float(config_obj[ConfigTrade.max_buy_per_trade.name])
@@ -38,7 +38,7 @@ class Trader:
         try:
             order = self.prepare_order(order)
 
-            trade = Trade(order, self._generates_id(), 0, TradeResults.waiting.value, TradeStatus.working.value)
+            trade = Trade(order, self._generates_trade_id(), 0, TradeResults.waiting.value, TradeStatus.working.value)
 
             if trade_id is not None:
                 order.trade_id = trade_id
@@ -78,10 +78,6 @@ class Trader:
                 return False
 
     @staticmethod
-    def generate_id():
-        return str(datetime.now().day) + str(datetime.now().month) + str(datetime.now().year) + str(randint(1, 10000))
-
-    @staticmethod
     def order_to_dict(order):
         order_dict = {OrderComponents.order_id.name: order.order_id,
                       OrderComponents.trade_id.name: order.trade_id,
@@ -116,7 +112,12 @@ class Trader:
 
         return trade_dict
 
-    def _generates_id(self):
+    @staticmethod
+    def generate_trader_id():
+        return str(datetime.now().day) + str(datetime.now().month) + str(datetime.now().year) + str(randint(1, 10000))
+
+    @staticmethod
+    def _generates_trade_id():
         return str(datetime.now().year) + \
                str(datetime.now().month) + \
                str(datetime.now().day) + \
@@ -124,6 +125,42 @@ class Trader:
                str(datetime.now().minute) + \
                str(datetime.now().second) + \
                str(randint(1, 1000))
+
+    @staticmethod
+    def update_sell_price(trade_to_update, sell_price):
+        trade_to_update[OrderComponents.sell_price.name] = sell_price
+        return trade_to_update
+
+    @staticmethod
+    def update_profit(trade_to_update, sell_cost):
+        profit = sell_cost - trade_to_update[OrderComponents.cost.name]
+        trade_to_update[TradeComponents.profit.name] = profit
+
+        return trade_to_update
+
+    @staticmethod
+    def update_quantity(trade_to_update, quantity):
+        trade_to_update[OrderComponents.quantity.name] -= quantity
+        return trade_to_update
+
+    @staticmethod
+    def update_result(trade):
+        if trade[OrderComponents.quantity.name] == 0:
+
+            if trade[TradeComponents.profit.name] >= 0:
+                trade[TradeComponents.result.name] = TradeResults.positive.value
+
+            else:
+                trade[TradeComponents.result.name] = TradeResults.negative.value
+
+        return trade
+
+    @staticmethod
+    def update_status(trade):
+        if trade[OrderComponents.quantity.name] == 0:
+            trade[TradeComponents.status.name] = TradeStatus.closed.value
+
+        return trade
 
 
 if __name__ == '__main__':
