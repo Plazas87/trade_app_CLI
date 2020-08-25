@@ -40,9 +40,12 @@ if __name__ == '__main__':
             if open_trades:
                 print()
                 print('Open trades:')
-                for key, trade in enumerate(active_trades_list):
-                    print(f' - {str(key)}: {trade}')
-                print('\n')
+                for key, trade_dict in enumerate(active_trades_list):
+                    print(f' - {str(key)}: ', end='')
+                    for trade_key, trade_value in trade_dict.items():
+                        print(f'|{trade_key}: {trade_value}| ', end='')
+
+                    print()
 
                 trade_id = int(input('Digite el ID de la orden que desea cerrar: '))
                 status, trade_to_close = controller.get_open_trades_id(trade_id)

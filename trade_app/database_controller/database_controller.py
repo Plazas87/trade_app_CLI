@@ -8,6 +8,7 @@ from trade_app.config import DataBaseConnection
 
 class DatabaseController:
     """Class that controls database connections"""
+
     def __init__(self, db_config_obj):
         self.connection_status = False
         self._user = db_config_obj[DataBaseConnection.user.name]
@@ -107,26 +108,6 @@ class DatabaseController:
                 self._close_connection(conn)
                 return True
 
-    # TODO: validar la posibilidad de eliminar este metodo
-    # def load_open_orders(self):
-    #     """This method is in charge of putting in memory the open trades so that the user can
-    #     see them on the screen every time open or close an order"""
-    #
-    #     # connect to database
-    #     conn = self.connect()
-    #     strquery = 'SELECT * FROM openorders'
-    #
-    #     with conn:
-    #         cur = conn.cursor()
-    #         try:
-    #             cur.execute(strquery)
-    #             query = cur.fetchall()
-    #             dict_query = self.__query_to_dict(query)
-    #             return dict_query
-    #         except Exception as e:
-    #             print(e, '- Error in database_controller.py: {} method load_open_orders'.format(e.__traceback__.tb_lineno))
-    #             return None
-
     def save_capital(self, capital, info=None):
         """Set initial or current capital for a session"""
         conn = self._connect()
@@ -217,22 +198,20 @@ class DatabaseController:
                 self._close_connection(conn)
                 return True
 
-    def get_trades(self, ticker):
+    def get_open_trades(self, ticker):
         """This method is in charge of putting in memory the open trades so that the user can
         sees them on the screen every time he closes an order"""
         # connect with database
         conn = self._connect()
 
         if ticker is None:
-            query = "SELECT ticker, buy_price, quantity, " \
-                    "time_stamp, order_id, status, result " \
+            query = "SELECT order_id, ticker, buy_price, quantity " \
                     "FROM openorders " \
                     "WHERE status = true " \
                     "ORDER BY time_stamp DESC"
 
         else:
-            query = "SELECT ticker, buy_price, quantity, " \
-                    "time_stamp, order_id, status, result " \
+            query = "SELECT order_id, ticker, buy_price, quantity " \
                     "FROM openorders " \
                     "WHERE ticker = (%s) AND status = true " \
                     "ORDER BY time_stamp DESC"
@@ -242,6 +221,7 @@ class DatabaseController:
             try:
                 data = (ticker,)
                 cursor.execute(query, data)
+                data_query = cursor.fetchall()
 
             except Exception as e:
                 print(f'Error while reading open trades: {e}')
@@ -249,10 +229,18 @@ class DatabaseController:
                 self._close_connection(conn)
 
             else:
-                data_query = cursor.fetchall()
+                open_trades = []
+                for trade in data_query:
+                    tmp = {TradeComponents.order_id.name: trade[0],
+                           TradeComponents.ticker.name: trade[1],
+                           TradeComponents.quantity.name: trade[2],
+                           TradeComponents.cost.name: trade[3]}
+
+                    open_trades.append(tmp)
+
                 cursor.close()
                 self._close_connection(conn)
-                return data_query
+                return open_trades
 
     def get_order_by_id(self, id):
         """Get an open order by id"""

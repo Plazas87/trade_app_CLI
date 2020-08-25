@@ -113,7 +113,7 @@ class Controller:
             return False
 
     def get_open_trades_ticker(self, ticker=None):
-        trade_list = self._dbController.get_trades(ticker=ticker)
+        trade_list = self._dbController.get_open_trades(ticker=ticker)
         if len(trade_list) == 0:
             return False, trade_list
 
