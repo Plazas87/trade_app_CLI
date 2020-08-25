@@ -139,7 +139,7 @@ class Order:
                    str(randint(1, 10000))
 
     def __str__(self):
-        return f'id: {self.id}, ' \
+        return f'id: {self.order_id}, ' \
                f'timestamp: {self.timestamp}, ' \
                f'year: {self.year}, ' \
                f'month: {self.month}, ' \
