@@ -10,10 +10,11 @@ if __name__ == '__main__':
     controller.run()
 
     stocks = ['NFLX', 'SPY']
-    while True:
+
+    while controller.status:
         print()
         interface = input(
-            'Digite la opción que desea ejecutar: 1 para compra, 2 para venta y 0 para salir \nDigite una opción: ')
+            'Chose and option: 1 to buy, 2 to sell y 0 to exit \nType your chose: ')
         if interface == '1':
             try:
                 buy_order = BuyOrder(stocks[0], buy_price=randint(1, 40), quantity=randint(1, 10))
@@ -22,28 +23,25 @@ if __name__ == '__main__':
                 if status:
                     # show information after the order execution
                     print('Trade successfully executed.')
-                    print('Se ha ejecutato la orden con las siguientes características:')
+                    print('An order with the following characteristics has been executed:')
                     for key in order_dict.keys():
                         print(' - ' + key + ': ', end='')
                         print(str(order_dict[key]))
                     print('\n')
 
             except Exception as e:
-                print(e, ' - No se puede ejecutar la acción. Hubo un error durante el proceso - ', e.args)
+                print(e, ' - The action could not be executed - ', e.args)
 
         elif interface == '2':
             print()
-            print(' - Cargando portafolio...')
             print('    Connecting to database...')
             print()
-            ticker = input('Digite el ticker de la posición que quiere cerrar: ')
-            open_trades, active_trades_list = controller.get_open_trades_ticker(ticker)
+            open_trades, active_trades_list = controller.get_open_trades_ticker()
             if open_trades:
                 print()
                 print('Open trades:')
                 for key, trade in enumerate(active_trades_list):
-                    print(' - ' + str(key) + ': ', end='')
-                    print(trade)
+                    print(f' - {str(key)}: {trade}')
                 print('\n')
 
                 trade_id = int(input('Digite el ID de la orden que desea cerrar: '))
@@ -60,8 +58,9 @@ if __name__ == '__main__':
                 if order_status:
                     # show information after the order execution
                     print('Trade successfully executed.')
+                    print()
                     print(f'Profit: {profit}')
-                    print('Se ha ejecutato la orden con las siguientes características:')
+                    print('An order with the following characteristics has been executed:')
                     for key in order_dict.keys():
                         print(' - ' + key + ': ', end='')
                         print(str(order_dict[key]))
